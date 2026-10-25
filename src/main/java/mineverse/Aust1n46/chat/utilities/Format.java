@@ -133,14 +133,13 @@ public class Format {
 						} else {
 							final String clickText = escapeJsonChars(Format.FormatStringAll(
 									PlaceholderAPI.setBracketPlaceholders(icp.getPlayer(), jsonAttribute.getClickText())));
-							actionJson = ",\"click_event\":{\"action\":\"" + jsonAttribute.getClickAction().toString() + "\",\"command\":\"" + clickText
-							+ "\"}";
+							actionJson = "," + clickEventJson(jsonAttribute.getClickAction().toString(), clickText);
 						}
 						final String hoverJson;
 						if (hoverText.isEmpty()) {
 							hoverJson = StringUtils.EMPTY;
 						} else {
-							hoverJson = ",\"hover_event\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
+							hoverJson = ",\"" + hoverEventKey() + "\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
 									+ convertToJsonColors(hoverText) + "]}}";
 						}
 						temp += convertToJsonColors(lastCode + formattedPlaceholder, actionJson + hoverJson) + ",";
@@ -190,9 +189,9 @@ public class Format {
 					https = "s";
 				temp += convertToJsonColors(lastCode + link,
 						",\"underlined\":" + underlineURLs()
-								+ ",\"click_event\":{\"action\":\"open_url\",\"url\":\"http" + https + "://"
-								+ ChatColor.stripColor(link.replace("http://", "").replace("https://", ""))
-								+ "\"},\"hover_event\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
+								+ "," + clickEventJson("open_url", "http" + https + "://"
+								+ ChatColor.stripColor(link.replace("http://", "").replace("https://", "")))
+								+ ",\"" + hoverEventKey() + "\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
 								+ convertToJsonColors(lastCode + link) + "]}}")
 						+ ",";
 				lastCode = getLastCode(lastCode + link);
@@ -446,6 +445,22 @@ public class Format {
 		}
 	}
 	
+	/**
+	 * Builds a click event JSON object. Minecraft 1.21.5 renamed clickEvent to click_event and
+	 * replaced the generic value field with an action-specific one (url or command).
+	 */
+	private static String clickEventJson(String action, String value) {
+		if (!VersionHandler.isAtLeast_1_21_5()) {
+			return "\"clickEvent\":{\"action\":\"" + action + "\",\"value\":\"" + value + "\"}";
+		}
+		final String valueKey = action.equalsIgnoreCase("open_url") ? "url" : "command";
+		return "\"click_event\":{\"action\":\"" + action + "\",\"" + valueKey + "\":\"" + value + "\"}";
+	}
+
+	private static String hoverEventKey() {
+		return VersionHandler.isAtLeast_1_21_5() ? "hover_event" : "hoverEvent";
+	}
+
 	private static String escapeJsonChars(String s) {
 		return s.replace("\\", "\\\\").replace("\"", "\\\"");
 	}
@@ -454,9 +469,9 @@ public class Format {
 		if (player.hasPermission("venturechat.gui")) {
 			json = json.substring(0, json.length() - 1);
 			json += "," + Format.convertToJsonColors(Format.FormatStringAll(getInstance().getConfig().getString("guiicon")),
-					",\"click_event\":{\"action\":\"run_command\",\"command\":\"/vchatgui " + sender + " " + channelName
-							+ " " + hash
-							+ "\"},\"hover_event\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
+					"," + clickEventJson("run_command", "/vchatgui " + sender + " " + channelName
+							+ " " + hash)
+							+ ",\"" + hoverEventKey() + "\":{\"action\":\"show_text\",\"value\":{\"text\":\"\",\"extra\":["
 							+ Format.convertToJsonColors(
 									Format.FormatStringAll(getInstance().getConfig().getString("guitext")))
 							+ "]}}")
