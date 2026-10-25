@@ -43,6 +43,7 @@ import mineverse.Aust1n46.chat.listeners.ChatListener;
 import mineverse.Aust1n46.chat.listeners.CommandListener;
 import mineverse.Aust1n46.chat.listeners.LoginListener;
 import mineverse.Aust1n46.chat.listeners.PacketListenerLegacyChat;
+import mineverse.Aust1n46.chat.listeners.PaperChatListener;
 import mineverse.Aust1n46.chat.listeners.SignListener;
 import mineverse.Aust1n46.chat.localization.Localization;
 import mineverse.Aust1n46.chat.localization.LocalizedMessage;
@@ -231,8 +232,20 @@ public class MineverseChat extends JavaPlugin implements PluginMessageListener {
 		pluginManager.registerEvents(new SignListener(), this);
 		pluginManager.registerEvents(new CommandListener(), this);
 		pluginManager.registerEvents(new LoginListener(), this);
+		if (isPaperChatEventAvailable()) {
+			pluginManager.registerEvents(new PaperChatListener(), this);
+		}
 		if (VersionHandler.isUnder_1_19()) {
 			ProtocolLibrary.getProtocolManager().addPacketListener(new PacketListenerLegacyChat());
+		}
+	}
+	
+	private static boolean isPaperChatEventAvailable() {
+		try {
+			Class.forName("io.papermc.paper.event.player.AsyncChatEvent");
+			return true;
+		} catch (ClassNotFoundException e) {
+			return false;
 		}
 	}
 	
