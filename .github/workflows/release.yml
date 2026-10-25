@@ -41,6 +41,9 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
         run: |
-          flags=(--title "VentureChat ${VERSION}" --generate-notes --verify-tag)
+          flags=(--title "VentureChat ${VERSION}" --verify-tag)
+          # Hand-written notes in documentation/release-notes/<tag>.md win over generated ones
+          notes="documentation/release-notes/${GITHUB_REF_NAME}.md"
+          if [[ -f "$notes" ]]; then flags+=(--notes-file "$notes"); else flags+=(--generate-notes); fi
           if [[ "$PRERELEASE" == "true" ]]; then flags+=(--prerelease); fi
           gh release create "$GITHUB_REF_NAME" "target/VentureChat-${VERSION}.jar" "${flags[@]}"
