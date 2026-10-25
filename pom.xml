@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>mineverse.Aust1n46.chat</groupId>
     <artifactId>VentureChat</artifactId>
-    <version>3.8.0-paper1.20.6</version>
+    <version>${revision}</version>
     <url>https://bitbucket.org/Aust1n46/venturechat/src/master</url>
     <scm>
         <url>https://bitbucket.org/Aust1n46/venturechat/src/master</url>
@@ -17,6 +17,8 @@
     <name>VentureChat</name>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <!-- Plugin version; CI overrides it with -Drevision=... -->
+        <revision>3.8.0-pfc.1-SNAPSHOT</revision>
     </properties>
     <build>
         <defaultGoal>clean package</defaultGoal>
