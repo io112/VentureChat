@@ -3,6 +3,12 @@ name: Release
 on:
   push:
     tags: [ "v*" ]
+  # Releases the dispatched commit and creates its tag, for when pushing a tag is not possible
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release, without the leading v (e.g. 3.8.1)'
+        required: true
 
 permissions:
   contents: write
@@ -22,14 +28,21 @@ jobs:
       - name: Resolve version from tag
         id: version
         shell: bash
+        env:
+          INPUT_VERSION: ${{ inputs.version }}
         run: |
-          version="${GITHUB_REF_NAME#v}"
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+            version="${INPUT_VERSION#v}"
+          else
+            version="${GITHUB_REF_NAME#v}"
+          fi
           if ! [[ "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$ ]]; then
-            echo "::error::Tag ${GITHUB_REF_NAME} is not a version tag like v3.8.0-pfc.1 or v3.8.0-pfc.2-rc.1"
+            echo "::error::${version} is not a version like 3.8.1 or 3.9.0-rc.1"
             exit 1
           fi
           echo "version=${version}" >> "$GITHUB_OUTPUT"
-          # Fork builds always carry a -pfc.N suffix, so only rc/alpha/beta/pre tags are pre-releases
+          echo "tag=v${version}" >> "$GITHUB_OUTPUT"
+          # Only rc/alpha/beta/pre versions are pre-releases
           if [[ "$version" =~ -(rc|alpha|beta|pre) ]]; then echo "prerelease=true" >> "$GITHUB_OUTPUT"; else echo "prerelease=false" >> "$GITHUB_OUTPUT"; fi
 
       - name: Build with Maven
@@ -40,10 +53,13 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
           PRERELEASE: ${{ steps.version.outputs.prerelease }}
+          TAG: ${{ steps.version.outputs.tag }}
         run: |
-          flags=(--title "VentureChat ${VERSION}" --verify-tag)
+          flags=(--title "VentureChat ${VERSION}")
+          # A tag push releases that tag; a manual run creates the tag on the dispatched commit
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then flags+=(--target "$GITHUB_SHA"); else flags+=(--verify-tag); fi
           # Hand-written notes in documentation/release-notes/<tag>.md win over generated ones
-          notes="documentation/release-notes/${GITHUB_REF_NAME}.md"
+          notes="documentation/release-notes/${TAG}.md"
           if [[ -f "$notes" ]]; then flags+=(--notes-file "$notes"); else flags+=(--generate-notes); fi
           if [[ "$PRERELEASE" == "true" ]]; then flags+=(--prerelease); fi
-          gh release create "$GITHUB_REF_NAME" "target/VentureChat-${VERSION}.jar" "${flags[@]}"
+          gh release create "$TAG" "target/VentureChat-${VERSION}.jar" "${flags[@]}"

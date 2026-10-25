@@ -23,4 +23,6 @@ Versions are plain `X.Y.Z` and continue from upstream 3.8.0, for example `3.8.1`
    ```
 4. The **Release** workflow builds `VentureChat-3.8.1.jar` and publishes a GitHub Release with it.
    Tags containing `-rc`, `-alpha`, `-beta` or `-pre` are published as pre-releases.
+   Instead of pushing a tag you can run the **Release** workflow by hand (Actions → Release → Run workflow)
+   with the version, e.g. `3.8.1`. It releases the selected branch's latest commit and creates the tag itself.
 5. Bump `revision` in `pom.xml` to the next snapshot (e.g. `3.8.2-SNAPSHOT`).
